@@ -1,23 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
-import { IRegistorUser } from "../../types/user.interface";
+import { ILoginUser, IRegistorUser } from "../../types/user.interface";
+import argon2 from "argon2";
 const prisma = new PrismaClient();
 
 export const registorUser = async (req: Request, res: Response) => {
   try {
     const data: IRegistorUser = req.body;
-    if (
-      !data.confirm ||
-      !data.email ||
-      !data.fullname ||
-      !data.password ||
-      !data.phoneNumber
-    ) {
-      res.status(400).json({
-        message: "required columns is missing ",
-      });
-      return;
-    }
 
     const user = await prisma.users.findFirst({
       where: {
@@ -38,15 +27,60 @@ export const registorUser = async (req: Request, res: Response) => {
       return;
     }
 
+    const hashPassword = await argon2.hash(data.password);
+
     const createUser = await prisma.users.create({
       data: {
         fullname: data.fullname,
         email: data.email,
-        password: data.password,
+        password: hashPassword,
         phoneNumber: data.phoneNumber,
       },
     });
+
+    const { password, ...rest } = createUser;
+
+    res.status(201).json({
+      message: "seccesfully created",
+      createUser: rest,
+    });
   } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "something wrong on the server",
+    });
+  }
+};
+
+export const loginUser = async (req: Request, res: Response) => {
+  try {
+    const data: ILoginUser = req.body;
+    const user = await prisma.users.findFirst({
+      where: {
+        email: data.email,
+      },
+    });
+
+    if (!user) {
+      res.status(401).json({
+        message: "incorrect password or email",
+      });
+      return;
+    }
+
+    const isHashPassword = await argon2.verify(user.password, data.password);
+    if (!isHashPassword) {
+      res.status(401).json({
+        message: "incorrect password or email",
+      });
+      return;
+    }
+    res.status(200).json({
+      message: "seccessfully Login",
+      user,
+    });
+  } catch (error) {
+    console.log(error);
     res.status(500).json({
       message: "something wrong on the server",
     });

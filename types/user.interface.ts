@@ -5,3 +5,8 @@ export interface IRegistorUser {
   password: string;
   confirm: string;
 }
+
+export interface ILoginUser {
+  email: string;
+  password: string;
+}
