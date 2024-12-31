@@ -1,8 +1,10 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { ILoginUser, IRegistorUser } from "../../types/user.interface";
-import argon2 from "argon2";
 const prisma = new PrismaClient();
+import jwt, { sign } from "jsonwebtoken";
+import argon2 from "argon2";
+import { secretKey } from "../secret";
 
 export const registorUser = async (req: Request, res: Response) => {
   try {
@@ -75,9 +77,12 @@ export const loginUser = async (req: Request, res: Response) => {
       });
       return;
     }
+    const { password, ...rest } = user;
+    const accessToken = generateToken(user.id);
     res.status(200).json({
       message: "seccessfully Login",
-      user,
+      user: rest,
+      token: accessToken,
     });
   } catch (error) {
     console.log(error);
@@ -85,4 +90,10 @@ export const loginUser = async (req: Request, res: Response) => {
       message: "something wrong on the server",
     });
   }
+};
+
+export const generateToken = (userId: number) => {
+  return jwt.sign({ userId }, secretKey, {
+    expiresIn: "35h",
+  });
 };
