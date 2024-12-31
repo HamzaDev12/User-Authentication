@@ -2,9 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { ILoginUser, IRegistorUser } from "../../types/user.interface";
 const prisma = new PrismaClient();
-import jwt, { sign } from "jsonwebtoken";
-import argon2 from "argon2";
 import { secretKey } from "../secret";
+import { generateToken } from "../../helpers/jwt.helpers";
+import argon2 from "argon2";
 
 export const registorUser = async (req: Request, res: Response) => {
   try {
@@ -92,8 +92,8 @@ export const loginUser = async (req: Request, res: Response) => {
   }
 };
 
-export const generateToken = (userId: number) => {
-  return jwt.sign({ userId }, secretKey, {
-    expiresIn: "35h",
+export const whoami = async (req: Request, res: Response) => {
+  res.status(200).json({
+    message: "successfully",
   });
 };
