@@ -1,41 +1,46 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { secretKey } from "../src/secret";
+import { authRequest } from "../types/request";
 
 export const authenticate = async (
-  req: Request,
+  req: authRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const authHeaders = req?.headers?.authorization;
-    if (!authHeaders) {
+    const authHeader = req?.headers?.authorization;
+    if (!authHeader) {
       res.status(401).json({
-        message: "unAuth0rized (No Headers)",
+        isSuccess: false,
+        message: "Unauthorized (NO AUTHHEADER)",
       });
       return;
     }
-
-    const token = authHeaders.split(" ")[1];
+    // Bearer token
+    const token = authHeader.split(" ")[1];
     if (!token) {
       res.status(401).json({
-        message: "unAuth0rized (No token)",
+        isSuccess: false,
+        message: "Unauthorized (NO TOKEN)",
       });
       return;
     }
-
-    const result = jwt.verify(token, secretKey);
+    const result: any = jwt.verify(token, secretKey);
     if (!result) {
       res.status(401).json({
-        message: "token expired",
+        isSuccess: false,
+        message: "Unauthorized (NO RESULT)",
       });
       return;
     }
-
-    res.json(result);
+    req.userId = result.userId;
+    next();
   } catch (error) {
+    console.log(error);
     res.status(401).json({
-      message: "unAuth0rized",
+      isSuccess: false,
+      message: "Unauthorized",
     });
   }
 };
